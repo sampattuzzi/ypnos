@@ -9,7 +9,7 @@
 module Ypnos.CUDA.Expr.Combinators where
 
 import Data.Array.Accelerate hiding (flatten) 
-import Data.Array.Accelerate.Interpreter as Acc
+import Data.Array.Accelerate.CUDA as Acc
 import Data.Array.Accelerate.Array.Sugar hiding (size, shape)
 import Data.Array.IArray hiding (Array)
 import Data.Array.Unboxed hiding (Array)

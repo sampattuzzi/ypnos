@@ -23,6 +23,7 @@ library
   hs-source-dirs:   src
   build-depends:    base, 
                     accelerate, 
+                    accelerate-cuda,
                     template-haskell, 
                     syb ==0.3.*, 
                     array ==0.4.*, 
