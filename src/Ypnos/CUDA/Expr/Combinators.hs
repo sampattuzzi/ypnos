@@ -6,7 +6,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
-module Ypnos.CUDA.Expr.Combinators where
+module Ypnos.CUDA.Expr.Combinators (Fun1(..), Fun2(..), Sten(..)) where
 
 import Data.Array.Accelerate hiding (flatten) 
 import Data.Array.Accelerate.CUDA as Acc
@@ -15,23 +15,15 @@ import Data.Array.IArray hiding (Array)
 import Data.Array.Unboxed hiding (Array)
 
 import Ypnos.Core.Grid
+import Ypnos.Core.Combinators
 
-import Prelude hiding (map, zipWith, replicate)
+import Prelude hiding (map, zipWith, fold, replicate)
 
 -- Grid class
 
 {-class YGrid grid where-}
     {-listGrid :: (Dimension d) => [a] -> (Index d) -> grid-}
     {-gridData :: grid -> [a]-}
-
-class RunGrid grid sh where
-    data Sten sh a b
-    runG :: Sten sh a b -> grid a -> grid b
-
-class ReduceGrid grid where   
-    data Fun1 a b 
-    data Fun2 a b c 
-    reduceG :: Reducer a c -> grid a -> c
 
 --Utils
 {-useGrid :: -}
@@ -59,7 +51,7 @@ type instance IShape (Dim x :* Dim y) = Z :. Int :. Int
     {-listGrid = undefined-}
     {-gridData = undefined-}
 
-instance (arr ~ Array sh) => RunGrid (arr) sh where 
+instance (arr ~ Array sh) => RunGrid arr sh where 
     data Sten sh a b where
         Sten :: (Shape sh, Stencil sh a sten',
                  Elt a, Elt b) =>
@@ -67,7 +59,8 @@ instance (arr ~ Array sh) => RunGrid (arr) sh where
                 -> Sten sh a b
     runG (Sten f) = Acc.run . (stencil f (Mirror)) . use 
 
-run' :: forall x y d sh sten b dyn. 
+-- Old, before using type classes
+run :: forall x y d sh sten b dyn. 
     (IArray UArray x, IArray UArray y, 
     Dimension d, 
     Stencil sh x sten, 
@@ -77,7 +70,7 @@ run' :: forall x y d sh sten b dyn.
     (sten -> Exp y) 
     -> Grid d b dyn x 
     -> Grid d Nil Static y
-run' f (Grid arr d c (b1, b2) boundaries) =
+run f (Grid arr d c (b1, b2) boundaries) =
     Grid (toIArray res) d c (b1, b2) NilB
     where res = Acc.run (sten_acc) :: Array sh y
           sten_acc = stencil f (Mirror) acc 
@@ -85,15 +78,6 @@ run' f (Grid arr d c (b1, b2) boundaries) =
           arr' = fromIArray arr :: Array sh x
 
 --The reduce primitive
-
-data Reducer a c where
-    Reducer ::   (Fun2 a b b) 
-              -> (Fun2 b b b) 
-              -> b
-              -> (Fun1 b c)
-              -> Reducer a c
-
-mkReducer = Reducer
 
 instance (Shape sh) => ReduceGrid (Array sh) where
     data Fun2 a b c where

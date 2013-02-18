@@ -15,10 +15,11 @@ import Test.QuickCheck
 
 import Data.List
 
+import Ypnos 
 import Ypnos.CUDA
 import Ypnos.Core.Grid
 
-import Data.Array.Accelerate hiding (fst, snd, size, fromIntegral)
+import Data.Array.Accelerate hiding (fst, snd, size, all, fromIntegral)
 import qualified Data.Array.Accelerate.Interpreter as I
 
 import Data.Array.Unboxed hiding (Array)
@@ -42,7 +43,7 @@ prop_reduce :: [Int] -> Int -> Int -> Gen Prop
 prop_reduce xs x y =  bounded 50 x y && (length xs) > 0 ==> 
     red (+) 0 arr == (reduceG reducer arr)
     where reducer = mkReducer (Fun2A (+)) (Fun2A (+)) 0 (Fun1A id) 
-          arr = fromList (Z :. x :. y) (cycle xs) 
+          arr = fromList (Z :. x :. y) (cycle xs)
 
 avg :: Floating (Exp a) => Stencil3x3 a -> Exp a
 avg ((a, b, c),
@@ -55,7 +56,7 @@ runAvg xs = I.run (stencil avg Mirror acc_xs)
     where acc_xs = use xs
 
 avgY :: Floating (Exp a) => Stencil3x3 a -> Exp a
-avgY = [funGPU| X*Y:|a  b c|
+avgY = [funCUDA| X*Y:|a  b c|
                  |d @e f|
                  |g  h i| 
         -> (a + b + c + d + e + f + g + h + i)/9|]
@@ -78,21 +79,9 @@ mirror = [boundary| Float  (*i, -1) g -> g!!!(i, 0) -- top
 zeroBound = [boundary| Float from (-1, -1) to (+1, +1) -> 0.0 |]
 
 
-avgY' :: ((InBoundary (IntT (Neg (S Zn)), IntT (Neg (S Zn))) b)
-         ,(InBoundary (IntT (Neg (S Zn)), IntT (Pos (S Zn))) b)
-         ,(InBoundary (IntT (Pos (S Zn)), IntT (Neg (S Zn))) b)
-         ,(InBoundary (IntT (Pos (S Zn)), IntT (Pos (S Zn))) b)
-         ,(InBoundary (IntT (Neg (S Zn)), IntT (Pos (Zn))) b)
-         ,(InBoundary (IntT (Pos (S Zn)), IntT (Pos (Zn))) b)
-         ,(InBoundary (IntT (Pos (Zn)), IntT (Neg (S Zn))) b)
-         ,(InBoundary (IntT (Pos (Zn)), IntT (Pos (S Zn))) b)
-         , IArray UArray a
-         , Fractional a
-         )
-         => Grid (Dim X :* Dim Y) b dyn a -> a
-avgY' = [fun| X*Y:|a  b c|
-                        |d @e f|
-                        |g  h i| 
+avgY' = [safeFun| X*Y:|a  b c|
+                      |d @e f|
+                      |g  h i| 
         -> (a + b + c + d + e + f + g + h + i)/9|]
 
 runAvgY' :: [Float] -> (Int,Int) -> [Float]
