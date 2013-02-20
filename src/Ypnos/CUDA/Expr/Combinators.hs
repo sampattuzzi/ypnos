@@ -14,7 +14,9 @@ import Data.Array.Accelerate.Array.Sugar hiding (size, shape)
 import Data.Array.IArray hiding (Array)
 import Data.Array.Unboxed hiding (Array)
 
+import Ypnos.Core.Dimensions
 import Ypnos.Core.Grid
+import Ypnos.Core.Types
 import Ypnos.Core.Combinators
 
 import Prelude hiding (map, zipWith, replicate)
@@ -60,7 +62,7 @@ instance (arr ~ Array sh) => RunGrid arr sh where
     runG (Sten f) = Acc.run . (stencil f (Mirror)) . use 
 
 -- Old, before using type classes
-run :: forall x y d sh sten b dyn. 
+run :: forall x y d sh sten. 
     (IArray UArray x, IArray UArray y, 
     Dimension d, 
     Stencil sh x sten, 
@@ -68,7 +70,7 @@ run :: forall x y d sh sten b dyn.
     (EltRepr (Index d)) ~ (EltRepr sh), 
     (IShape d) ~ sh) => 
     (sten -> Exp y) 
-    -> Grid d b dyn x 
+    -> Grid d Nil Static x 
     -> Grid d Nil Static y
 run f (Grid arr d c (b1, b2) boundaries) =
     Grid (toIArray res) d c (b1, b2) NilB
