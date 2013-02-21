@@ -9,6 +9,7 @@
 > {-# LANGUAGE OverlappingInstances #-}
 > {-# LANGUAGE FunctionalDependencies #-}
 > {-# LANGUAGE UndecidableInstances #-}
+> {-# LANGUAGE ConstraintKinds #-}
 
 > module Ypnos.Core.Combinators where
 
@@ -22,6 +23,7 @@
 > import Data.Array.Unboxed
 > import Data.Array.Base
 > import qualified GHC.Arr as GHCArr
+> import GHC.Prim
 
 > import Data.List
 
@@ -30,9 +32,13 @@
 Ypnos classes.
 
 
-> class RunGrid grid sh where
->     data Sten sh a b
->     runG :: Sten sh a b -> grid a -> grid b
+> class RunGrid grid where
+>     type GridC sten sh b dyn x y :: Constraint
+>     type StenT sten sh b dyn x y 
+>     runG :: (GridC sten sh b dyn x y) => 
+>              StenT sten sh b dyn x y 
+>              -> grid x 
+>              -> grid y
 > 
 > class ReduceGrid grid where   
 >     data Fun1 a b 
@@ -47,6 +53,11 @@ Ypnos classes.
 >               -> Reducer a c
 > 
 > mkReducer = Reducer
+
+> instance (Dimension sh) => RunGrid (Grid sh b dyn) where 
+>     type GridC sten sh b dyn x y = (IArray UArray x, IArray UArray y)
+>     type StenT sten d b dyn x y = Grid d b dyn x -> y
+>     runG = runA
 
 > -- Indexing
 

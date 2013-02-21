@@ -61,7 +61,7 @@ avgY = [funCUDA| X*Y:|a  b c|
                      |g  h i| -> (a + b + c + d + e + f + g + h + i)/9|]
 
 runAvgY :: (Array DIM2 Float) -> (Array DIM2 Float)
-runAvgY xs = runG (Sten avgY) xs
+runAvgY xs = runG (avgY) xs
 
 gx g = fst (size g) 
 gy g = snd (size g)

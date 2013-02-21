@@ -5,6 +5,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE ConstraintKinds #-}
 
 module Ypnos.CUDA.Expr.Combinators (Fun1(..), Fun2(..), Sten(..)) where
 
@@ -54,12 +55,8 @@ type instance IShape (Dim x :* Dim y) = Z :. Int :. Int
     {-gridData = undefined-}
 
 instance (arr ~ Array sh) => RunGrid arr sh where 
-    data Sten sh a b where
-        Sten :: (Shape sh, Stencil sh a sten',
-                 Elt a, Elt b) =>
-                (sten' -> Exp b)
-                -> Sten sh a b
-    runG (Sten f) = Acc.run . (stencil f (Mirror)) . use 
+    type Sten sh a b a' b' = (Shape sh, Stencil sh a a', Elt a, Elt b, b' ~ Exp b)
+    runG (f) = Acc.run . (stencil f (Mirror)) . use 
 
 -- Old, before using type classes
 run :: forall x y d sh sten. 
