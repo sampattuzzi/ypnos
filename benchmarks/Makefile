@@ -1,12 +1,10 @@
-benchmarks : comp_avg
+benchmarks : comp_avg comp_life
 
 sources = Benchmark.hs
 bench = runghc -i"../src" Benchmark.hs
-funcs = life
+funcs = life avg
 archs = gpu cpu
-nums = 10
-
-funs : comp_life
+nums = 10 100
 
 comp_life : comp_life_100 comp_life_1000
 comp_avg : comp_avg_100 comp_avg_1000
