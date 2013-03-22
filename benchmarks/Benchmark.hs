@@ -12,6 +12,7 @@ import Criterion.Monad
 import Criterion.Analysis
 import Criterion.Environment
 import Criterion.Config
+import Statistics.Resampling.Bootstrap
 import Data.Vector.Unboxed hiding (map, mapM, foldr, foldr1, (++))
 import Prelude hiding (sum, length)
 import Control.Monad.Trans
@@ -38,18 +39,25 @@ stenBench f = [ bench "10x10" $ whnf f (10,10)
 --main = defaultMain [ bgroup "Ypnos" (stenBench runAvgY')
 --                   , bgroup "Accelerate" (stenBench runAvgA')
 --                   ]
-runB :: Fun -> Int -> IO Double
+type Result = (Double, Double, Double)
+
+runB :: Fun -> Int -> IO Result
 runB (Fun f) x = let v = do env <- measureEnvironment
                             l <- runBenchmark env (whnf f (x,x))
-                            s <- liftIO $ analyseSample 0.5 l 5
-                            m <- analyseMean l 5
-                            return m
+                            cfg <- getConfig
+                            let conf = fromLJ cfgConfInterval cfg
+                            let res  = fromLJ cfgResamples cfg
+                            s <- liftIO $ analyseSample conf l res
+                            let m = anMean s
+                            return (estPoint m,
+                                    estLowerBound m,
+                                    estUpperBound m)
 
          in  withConfig defaultConfig v
 
-makeSet :: (Monad m, Show a) => (Int -> m a) -> [Int] -> m [[String]]
-makeSet f range = let tup x = do y <- f x
-                                 return [show x,show y]
+makeSet :: (Int -> IO Result) -> [Int] -> IO [[String]]
+makeSet f range = let tup x = do (y, l, u)  <- f x
+                                 return [show x, show y, show l, show u]
                   in  mapM tup range
 
 insert i x y = x ++ i ++ y

@@ -26,12 +26,12 @@ library
                     accelerate ==0.12.*,
                     accelerate-cuda,
                     template-haskell ==2.7.*, 
-                    syb ==0.3.*, 
-                    array ==0.4.*, 
-                    directory ==1.2.*, 
-                    haskell-src-meta, 
-                    parsec,
-                    ghc-prim
+                    ghc-prim,
+                    syb >=0.3,
+                    array >=0.4,
+                    directory >=1.2,
+                    haskell-src-meta,
+                    parsec
 
 test-suite tests
   type:	            exitcode-stdio-1.0

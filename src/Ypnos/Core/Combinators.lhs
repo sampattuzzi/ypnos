@@ -76,18 +76,30 @@ Ypnos classes.
     unsafeIndexXD = unsafeIndex2D
 
 
-> class ReduceGrid grid where
->     data Fun1 a b
->     data Fun2 a b c
->     reduceG :: Reducer a c -> grid a -> c
+> class ReduceGrid g where
+>     type ConstFun1 g a b :: Constraint
+>     type ConstFun2 g a b c :: Constraint
+>     type Fun1 g a b
+>     type Fun2 g a b c
+>     reduceG :: Reducer g a c -> g a -> c
 
-> data Reducer a c where
->     Reducer ::   (Fun2 a b b)
->               -> (Fun2 b b b)
+> data Reducer g a c where
+>     Reducer ::   (ConstFun2 g a b b,
+>                   ConstFun2 g b b b,
+>                   ConstFun1 g a c)
+>               => (Fun2 g a b b)
+>               -> (Fun2 g b b b)
 >               -> b
->               -> (Fun1 b c)
->               -> Reducer a c
->
+>               -> (Fun1 g b c)
+>               -> Reducer g a c
+> mkReducer ::     (ConstFun2 g a b b,
+>                   ConstFun2 g b b b,
+>                   ConstFun1 g a c)
+>               => (Fun2 g a b b)
+>               -> (Fun2 g b b b)
+>               -> b
+>               -> (Fun1 g b c)
+>               -> Reducer g a c
 > mkReducer = Reducer
 
 > data CPUArr d b x y where
@@ -158,8 +170,9 @@ Grid deconstructors
 
 > gridData' :: (Dimension d, PointwiseOrd (Index d), IArray UArray a) => Grid d b a -> [a]
 > gridData' (Grid arr _ _ (origin, extent) _) =
->             let invert' = \(i, a) -> (invert i, a)
->                 xs = map invert' (sortBy (\(i, _) -> \(i', _) -> compare i i') (map invert' $ assocs arr))
+>             let -- invert' = \(i, a) -> (invert i, a)
+>                 -- xs = map invert' (sortBy (\(i, _) -> \(i', _) -> compare i i') (map invert' $ assocs arr))
+>                 xs = sortBy (\(i, _) -> \(i', _) -> compare i i') (assocs arr)
 >                 xs' = filter (\(i, a) -> gte i origin && lte i extent) xs
 >             in
 >               map snd xs'
@@ -210,7 +223,9 @@ Grid constructors
 >                 es = boundMap d boundaries g0 origin extent
 >                 origin' = add origin (lowerIx boundaries)
 >                 extent' = add extent (upperIx boundaries)
->                 xs' = zip (map invert (range (invert $ origin, invert $ (dec extent)))) xs
+>                 xs' = zip (range (origin, (dec extent))) xs
+>                 -- xs' = zip (map invert (range (invert $ origin, invert $ (dec extent)))) xs
+>
 >                 arr = array (origin', dec extent') (es++xs')
 
 Ziping and unzipping grids

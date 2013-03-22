@@ -91,7 +91,7 @@ class Conv i sh | i -> sh where
 instance Conv (Int) (Z :. Int) where
   fromDim (x) = (Z :. x)
 instance Conv (Int,Int) (Z :. Int :. Int) where
-  fromDim (x, y) = Z :. y :. x
+  fromDim (x, y) = Z :. x :. y
 --fromDim (Dim _ :* Dim _ :* Dim _) (x, y, z) = Z :. x :. y :. z
 
 instance (d ~ IDimension sh, IShape d ~ sh, Shape sh) =>
@@ -136,18 +136,13 @@ run f (Grid arr d c (b1, b2) boundaries) =
 --The reduce primitive
 
 instance (Shape sh) => ReduceGrid (Array sh) where
-    data Fun2 a b c where
-        Fun2A :: (Elt a, Elt b, Elt c) =>
-                (Exp a -> Exp b -> Exp c)
-                -> Fun2 a b c
-    data Fun1 a b where
-        Fun1A :: (Elt a, Elt b) =>
-                (Exp a -> Exp b)
-                -> Fun1 a b
-    reduceG (Reducer (Fun2A inter)
-                     (Fun2A comb)
-                     def
-                     (Fun1A conv)) grid =
+
+    type ConstFun2 (Array sh) a b c = (Elt a, Elt b, Elt c)
+    type Fun2 (Array sh) a b c = (Exp a -> Exp b -> Exp c)
+    type ConstFun1 (Array sh) a b = (Elt a, Elt b)
+    type Fun1 (Array sh) a b = (Exp a -> Exp b)
+
+    reduceG (Reducer inter comb def conv) grid =
         only $ Acc.run converted
         where
               converted = map conv folded
