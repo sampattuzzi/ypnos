@@ -56,7 +56,8 @@ runB (Fun f) x = let v = do env <- measureEnvironment
          in  withConfig defaultConfig v
 
 makeSet :: (Int -> IO Result) -> [Int] -> IO [[String]]
-makeSet f range = let tup x = do (y, l, u)  <- f x
+makeSet f range = let tup x = do print ("Running for " ++ (show x))
+                                 (y, l, u)  <- f x
                                  return [show x, show y, show l, show u]
                   in  mapM tup range
 
