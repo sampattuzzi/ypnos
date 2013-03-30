@@ -14,7 +14,7 @@ import Ypnos.Core.Grid
 import Ypnos.Core.Types --TODO: remove
 
 import Data.Array.Accelerate hiding (fst, snd, size, fromIntegral, map, not)
-import qualified Data.Array.Accelerate.Interpreter as I
+import qualified Data.Array.Accelerate.CUDA as I
 
 import Data.Array.Unboxed hiding (Array)
 
@@ -138,6 +138,7 @@ grid l = LGrid w h (concatMap f l)
 runId' :: (IsFloating a, Elt a) =>
           (Array DIM2 a) -> (Array DIM2 a)
 runId' xs = I.run acc_xs
+--runId' xs = I.run (cond (lift True) acc_xs acc_xs)a
     where acc_xs = use xs
 
 runId = raiseToList runId'
