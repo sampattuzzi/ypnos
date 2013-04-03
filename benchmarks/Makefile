@@ -1,4 +1,4 @@
-benchmarks : comp_avg_100 comp_life_100 id_100
+benchmarks : comp_avg_100 comp_life_100 id_100 avg_gpu_1000.csv life_gpu_1000.csv id_1000
 
 sources = Benchmark.hs
 bench = runghc -i"../src" Benchmark.hs
