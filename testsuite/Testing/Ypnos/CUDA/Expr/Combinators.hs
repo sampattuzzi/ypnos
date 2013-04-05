@@ -20,6 +20,7 @@ import Ypnos.CUDA
 import Ypnos.Core.Grid
 
 import Ypnos.Examples.Stencils
+import Ypnos.Examples.Reductions
 
 import Data.Array.Accelerate hiding (fst, snd, size, fromIntegral)
 import qualified Data.Array.Accelerate.Interpreter as I
@@ -34,17 +35,13 @@ comb_tests = testGroup "Ypnos.CUDA.Expr.Combinators"
     , testProperty "Run against original Ypnos" prop_run2
     ]
 
-red :: Shape sh => (a -> a -> a) -> a -> Array sh a -> a
-red f d a = foldr f d (toList a)
-
 bounded l x y = upper l [x,y] && lower 0 [x,y]
 upper l = all (\ x -> x < l)
 lower l = all (\ x -> x >= l)
 
 prop_reduce :: [Int] -> Int -> Int -> Gen Prop
 prop_reduce xs x y =  bounded 50 x y && (length xs) > 0 ==>
-    red (+) 0 arr == (reduceG (mkReducer (+) (+) 0 id) arr)
-    where arr = fromList (Z :. x :. y) (cycle xs)
+    sumReducer' xs x y == sumReducer xs x y
 
 runner :: ([Float] -> (Int,Int) -> [Float])
        -> ([Float] -> (Int,Int) -> [Float])

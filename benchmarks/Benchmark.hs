@@ -7,6 +7,7 @@ import System.Environment
 
 import Ypnos.Examples.Stencils
   (runAvgY, runAvg, runAvgY', raiseToList, runLife, runLife', runId)
+import Ypnos.Examples.Reductions
 
 import Criterion
 import Criterion.Monad
@@ -20,8 +21,9 @@ import Control.Monad.Trans
 import Control.Exception
 import Foreign.CUDA.Driver.Error
 
-l  = [1,2,3,4,5,6,7,8,9,10]
+l  = [1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0]
 l2 = [True, False, False, True, False, True]
+l3 = [1,2,3,4,5,6,7,8,9,10]
 
 avgGPU = runAvgY l
 avgCPU = runAvgY' l
@@ -31,6 +33,9 @@ lifeCPU = runLife' l2
 lifeGPU = runLife  l2
 
 idGPU = runId l
+
+sumGPU (x,y) = sumReducer l3 x y
+sumCPU (x,y) = sumReducer' l3 x y
 
 stenBench :: ((Int,Int) -> b) -> [Benchmark]
 stenBench f = [ bench "10x10" $ whnf f (10,10)
@@ -87,6 +92,8 @@ getFun "avg" "cpu" = Fun avgCPU
 getFun "life" "gpu" = Fun lifeGPU
 getFun "life" "cpu" = Fun lifeCPU
 getFun "id" "gpu" = Fun idGPU
+getFun "sum" "gpu" = Fun sumGPU
+getFun "sum" "cpu" = Fun sumCPU
 
 main = do [function, impl, begin, step, end, filename] <- getArgs
           let fun = getFun function impl
