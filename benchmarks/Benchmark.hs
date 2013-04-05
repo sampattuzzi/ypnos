@@ -1,4 +1,5 @@
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Benchmark where
 
@@ -16,6 +17,8 @@ import Statistics.Resampling.Bootstrap
 import Data.Vector.Unboxed hiding (map, mapM, foldr, foldr1, (++))
 import Prelude hiding (sum, length)
 import Control.Monad.Trans
+import Control.Exception
+import Foreign.CUDA.Driver.Error
 
 l  = [1,2,3,4,5,6,7,8,9,10]
 l2 = [True, False, False, True, False, True]
@@ -57,8 +60,11 @@ runB (Fun f) x = let v = do env <- measureEnvironment
 
 makeSet :: (Int -> IO Result) -> [Int] -> IO [[String]]
 makeSet f range = let tup x = do print ("Running for " ++ (show x))
-                                 (y, l, u)  <- f x
-                                 return [show x, show y, show l, show u]
+                                 res <- try (f x)
+                                 case res of
+                                   Right (y, l, u) ->
+                                     return [show x, show y, show l, show u]
+                                   Left (e::CUDAException) -> tup (x+1)
                   in  mapM tup range
 
 insert i x y = x ++ i ++ y

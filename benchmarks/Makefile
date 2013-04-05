@@ -1,10 +1,13 @@
-benchmarks : comp_avg_100 comp_life_100 id_100 avg_gpu_1000.csv life_gpu_1000.csv id_1000
+benchmarks : comp_life comp_avg id
 
-sources = Benchmark.hs
-bench = runghc -i"../src" Benchmark.hs
+sources = Benchmark
+bench = ./Benchmark
 funcs = avg life id
 archs = gpu cpu
 nums = 10 100
+
+Benchmark : Benchmark.hs
+	ghc -i"../src" -main-is Benchmark Benchmark.hs
 
 comp_life : comp_life_100 comp_life_1000
 comp_avg : comp_avg_100 comp_avg_1000
@@ -21,12 +24,12 @@ id_100: id_gpu_100.csv
 id_1000: id_gpu_1000.csv
 
 define BENCHMARK_template
-$(1)_$(2)_$(3)0.csv : $(sources)
-	$(bench) $(1) $(2) 2 $(3) $(3)0 $(1)_$(2)_$(3)0.csv
+$(1)_$(2)_$(4).csv : $(sources)
+	$(bench) $(1) $(2) 2 $(3) $(4) $(1)_$(2)_$(4).csv
 endef
 
 $(foreach func,$(funcs),\
 $(foreach arch,$(archs),\
 $(foreach num,$(nums),\
-$(eval $(call BENCHMARK_template,$(func),$(arch),$(num)))\
+$(eval $(call BENCHMARK_template,$(func),$(arch),$(num),$(num)0))\
 )))
